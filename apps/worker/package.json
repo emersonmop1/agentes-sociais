@@ -1,0 +1,31 @@
+{
+  "name": "@agentes/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env src/index.ts",
+    "build": "tsc && mkdir -p dist/templates && cp src/templates/*.hbs dist/templates/",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agentes/shared": "workspace:*",
+    "@google/generative-ai": "^0.21.0",
+    "@sentry/node": "^8.55.2",
+    "@supabase/supabase-js": "^2.46.2",
+    "handlebars": "^4.7.8",
+    "pg": "^8.13.1",
+    "pino": "^9.5.0",
+    "pino-pretty": "^13.0.0",
+    "playwright": "^1.49.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

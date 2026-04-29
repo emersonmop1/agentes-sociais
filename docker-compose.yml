@@ -1,0 +1,57 @@
+# Local dev stack: Postgres + API + Worker.
+# Web stays outside (run `pnpm dev:web` directly for HMR).
+# Supabase Auth is consumed from the cloud project — no local emulator here.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: agentes-db
+    environment:
+      POSTGRES_DB: agentes
+      POSTGRES_USER: agentes
+      POSTGRES_PASSWORD: agentes_dev
+    ports:
+      - "54322:5432"
+    volumes:
+      - agentes_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentes"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: agentes-api
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://agentes:agentes_dev@db:5432/agentes
+      API_PORT: "8000"
+      API_PUBLIC_URL: http://localhost:8000
+      WEB_PUBLIC_URL: http://localhost:5173
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: agentes-worker
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://agentes:agentes_dev@db:5432/agentes
+
+volumes:
+  agentes_pg_data:

@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Typecheck (api + worker + web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package (consumed by api/worker/web)
+        run: pnpm --filter @agentes/shared build
+
+      - name: Typecheck all packages
+        run: pnpm -r typecheck
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all
+        run: pnpm build
+
+  test:
+    name: API integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Tests need real Supabase (auth + DB) — they create + tear down test
+    # users via the service role. Skip the job entirely when secrets aren't
+    # configured (e.g. forks) instead of failing.
+    if: vars.RUN_INTEGRATION_TESTS == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @agentes/shared build
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<'EOF'
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          API_PUBLIC_URL=http://localhost:8000
+          WEB_PUBLIC_URL=http://localhost:5173
+          NODE_ENV=test
+          EOF
+
+      - name: Run API integration tests
+        run: pnpm --filter @agentes/api test

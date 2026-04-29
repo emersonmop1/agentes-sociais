@@ -1,0 +1,35 @@
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+coverage/
+
+.env
+.env.local
+.env.*.local
+!.env.example
+
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# Local Playwright session/cookies (encrypted in DB in prod)
+**/studio_session.json
+**/data/instagram/
+**/data/youtube/
+
+# masi-negocios-prot is a reference project, kept locally but not part of this workspace
+masi-negocios-prot/node_modules/
+masi-negocios-prot/dist/

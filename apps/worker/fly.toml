@@ -1,0 +1,16 @@
+app = "agentes-sociais-worker"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+# Worker is a process, not an HTTP service: no http_service block.
+# Fly keeps it alive 24/7.
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 1024  # bumped because Playwright lives here in Fatia 3+
